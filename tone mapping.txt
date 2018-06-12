@@ -1,48 +1,56 @@
-hdr = hdrread('...')
+clc;
+clear all;
+close all;
+
+hdr = hdrread('road.hdr');
 
 img = double(hdr);
+imshow(img);
 
 % Calculate the Intensity Image
 % Based on https://en.wikipedia.org/wiki/Relative_luminance
-I = 0.2126 * img(:,:,1) + 0.7152 * img(:,:,2) + 0.0722 * img(:,:,3);
+R=img(:,:,1);
+G=img(:,:,2);
+B=img(:,:,3);
+I = (0.32* R) + (0.65 * G) + (0.016 * B);
+figure;
+imshow(I);
+r=R./I;
+figure;
+imshow(r);
+g=G./I;
+figure;
+imshow(g);
+b=B./I;
+figure;
+imshow(b);
 
 % Get log domain Intensity
-L = log2(I);
+L = log10(I);
 
 % Get base image
-B = imbilatfilt(L);
+B1 = bilateral(L);
 
 % Get Detail image
-D = L - B;
+D = L - B1;
 
 % Contrast reduction only on the base
-maxb = max(B(:));
-minb = min(B(:)); 
+contrast=5./(max(B1(:))-min(B1(:)));
+abs_scale=max(B1(:)).*contrast;    %abs_scale is for normalization
 
-% Scale base image
-s = 3/(maxb-minb);
-ajtB = (B-maxb).*s;
-O = 2.^(ajtB+D);
+output_intensity=(B1.*contrast)+D - abs_scale;
 
-% Reconstruct Color Chanel
-img(:,:,1) = O.*(img(:,:,1)./I);
-img(:,:,2) = O.*(img(:,:,2)./I);
-img(:,:,3) = O.*(img(:,:,3)./I);
+R_output = r.*(10.^(output_intensity));
+figure;
+imshow(R_output);
+G_output=  g.*(10.^(output_intensity));
+B_output = b.*(10.^(output_intensity));
 
-% linearly scale to 0~1
-img = rescale(img);
 
-% Apply gamma correction
-img = img.^0.6;
+final(:,:,1)=R_output;
+final(:,:,2)=G_output;
+final(:,:,3)=B_output;
 
-[h,s,v] = rgb2hsv(img);
-h = h.^1.2;
-s = s.^1.1;
-v = v.^0.7;
 
-[rr, gg, bb] = hsv2rgb(h,s,v);
-img(:,:,1) = rr;
-img(:,:,2) = gg;
-img(:,:,3) = bb;
-
-end
+figure;
+imshow(final);
