@@ -1,22 +1,56 @@
-# Tone-Mapping-using-Bilateral-Filter
-This repository contains the implementation of Tone Mapping technique using edge-aware Bilateral Filter. 
+clc;
+clear all;
+close all;
 
-This is an implementation of the paper "Fast Bilateral Filtering for the Display of High-Dynamic-Range Images" by Fr´edo Durand and Julie Dorsey.
+hdr = hdrread('road.hdr');
 
-PiecewiseBilateral
-(Image I, spatial kernel fss , intensity influence gsr )
-J=0 /* set the output to zero */
-for j=0..NB SEGMENTS
-i j= minI+j  (max(I)-min(I))/NB SEGMENTS
-Gj=gsr (I - ij ) /* evaluate gsr at each pixel */
-K j=Gj
+img = double(hdr);
+imshow(img);
 
- fss /* normalization factor */
-H j=Gj
- I /* compute H for each pixel */
-H j=H j
+% Calculate the Intensity Image
+% Based on https://en.wikipedia.org/wiki/Relative_luminance
+R=img(:,:,1);
+G=img(:,:,2);
+B=img(:,:,3);
+I = (0.32* R) + (0.65 * G) + (0.016 * B);
+figure;
+imshow(I);
+r=R./I;
+figure;
+imshow(r);
+g=G./I;
+figure;
+imshow(g);
+b=B./I;
+figure;
+imshow(b);
 
- fss
-J j=H j /K j /* normalize */
-J=J+J j
- InterpolationWeight(I, ij )
+% Get log domain Intensity
+L = log10(I);
+
+% Get base image
+B1 = bilateral(L);
+
+% Get Detail image
+D = L - B1;
+
+% Contrast reduction only on the base
+contrast=5./(max(B1(:))-min(B1(:)));
+abs_scale=max(B1(:)).*contrast;    %abs_scale is for normalization
+
+output_intensity=(B1.*contrast)+D - abs_scale;
+
+R_output = r.*(10.^(output_intensity));
+figure;
+imshow(R_output);
+G_output=  g.*(10.^(output_intensity));
+B_output = b.*(10.^(output_intensity));
+
+
+final(:,:,1)=R_output;
+final(:,:,2)=G_output;
+final(:,:,3)=B_output;
+
+
+figure;
+imshow(final);
